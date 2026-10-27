@@ -15,13 +15,10 @@
 
 <title>OCR A Level CPU simulator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 <link href="https://fonts.googleapis.com/css?family=VT323" rel="stylesheet">
 <link rel="stylesheet" href="media/styles.css">
 
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script type="module" src="lib/cpu.js"></script>
 <script type="text/javascript" src="lib/raphael.min.js"></script>
 <script type="text/javascript" src="//platform-api.sharethis.com/js/sharethis.js#property=5989cbc50bf9cd001279351d&product=sticky-share-buttons"></script>
@@ -94,9 +91,9 @@ Show values as:
   <span id="compiler_status" role="status" aria-live="polite"></span>
 </div>
 
-<button type="button" class="btn btn-secondary" id="btn_examples" data-toggle="modal" data-target="#modal_examples"><i class="fa fa-thumbs-up"></i> Examples</button>
+<button type="button" class="btn btn-secondary" id="btn_examples"><i class="fa fa-thumbs-up"></i> Examples</button>
 
-<button type="button" class="btn btn-secondary" id="btn_import_export" data-toggle="modal" data-target="#modal_export"><i class="fa fa-save"></i> Import / Export</button>
+<button type="button" class="btn btn-secondary" id="btn_import_export"><i class="fa fa-save"></i> Import / Export</button>
 
 <button type="button" class="btn btn-secondary" id="btn_share"><i class="fa fa-share"></i> Share</button>
 
@@ -130,15 +127,15 @@ Show values as:
     <!-- Modal content-->
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-native-dismiss="modal" aria-label="Close">&times;</button>
         <h4 class="modal-title" id="modal_change_value_title">Change value</h4>
       </div>
       <div class="modal-body">
         <p>Change value from: <span id="change_value_from"></span> to <input type="text" class="form-control edit-text" id="change_value_to"></p>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btn_change_value_ok" class="btn btn-default" data-dismiss="modal"><i class="fa fa-check"></i> OK</button>
-        <button type="button" class="btn" data-dismiss="modal"><i class="fa fa-close"></i> Cancel</button>
+        <button type="button" id="btn_change_value_ok" class="btn btn-default" data-native-dismiss="modal"><i class="fa fa-check"></i> OK</button>
+        <button type="button" class="btn" data-native-dismiss="modal"><i class="fa fa-close"></i> Cancel</button>
       </div>
     </div>
 
@@ -150,16 +147,16 @@ Show values as:
     <!-- Modal content-->
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-native-dismiss="modal" aria-label="Close">&times;</button>
         <h4 class="modal-title" id="modal_change_value_title">Copy and paste program hex code</h4>
       </div>
       <div class="modal-body">
         <textarea id="export_hex" class="form-control" rows="5"></textarea>
       </div>
       <div class="modal-footer">
-                <button type="button" id="btn_export" class="btn btn-default" data-dismiss="modal"><i class="fa fa-share"></i> Export</button>
-                <button type="button" id="btn_import" class="btn btn-default" data-dismiss="modal"><i class="fa fa-check"></i> Import</button>
-        <button type="button" class="btn" data-dismiss="modal"><i class="fa fa-close"></i> Cancel</button>
+                <button type="button" id="btn_export" class="btn btn-default" data-native-dismiss="modal"><i class="fa fa-share"></i> Export</button>
+                <button type="button" id="btn_import" class="btn btn-default" data-native-dismiss="modal"><i class="fa fa-check"></i> Import</button>
+              <button type="button" class="btn" data-native-dismiss="modal"><i class="fa fa-close"></i> Cancel</button>
       </div>
     </div>
 
@@ -171,7 +168,7 @@ Show values as:
     <!-- Modal content-->
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-native-dismiss="modal" aria-label="Close">&times;</button>
         <h4 class="modal-title" id="modal_change_value_title">Example projects</h4>
       </div>
       <div class="modal-body">
@@ -182,8 +179,7 @@ Show values as:
         </ol>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btn_import" class="btn btn-default" data-dismiss="modal"><i class="fa fa-check"></i> Import</button>
-        <button type="button" class="btn" data-dismiss="modal"><i class="fa fa-close"></i> Cancel</button>
+        <button type="button" class="btn" data-native-dismiss="modal">Close</button>
       </div>
     </div>
 

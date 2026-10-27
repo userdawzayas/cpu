@@ -47,24 +47,12 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
   try {
     const page = await browser.newPage();
     const pageErrors = [];
+    const requestedUrls = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("request", (request) => requestedUrls.push(request.url()));
     await page.route("**/*", async (route) => {
       const url = new URL(route.request().url());
 
-      if (url.hostname === "code.jquery.com") {
-        await route.fulfill({
-          path: require.resolve("jquery/dist/jquery.min.js"),
-          contentType: "text/javascript"
-        });
-        return;
-      }
-      if (url.hostname === "maxcdn.bootstrapcdn.com" && url.pathname.endsWith(".js")) {
-        await route.fulfill({
-          body: "jQuery.fn.modal = function () { return this; };",
-          contentType: "text/javascript"
-        });
-        return;
-      }
       if (url.origin !== origin) {
         await route.abort();
         return;
@@ -80,6 +68,17 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(await page.locator(".decode_row_5 td").nth(3).innerText(), "LOAD");
     assert.equal(await page.locator(".decode_row_9").nth(0).locator("td").nth(3).innerText(), "INPUT");
     assert.equal(await page.locator(".decode_row_9").nth(1).locator("td").nth(3).innerText(), "OUTPUT");
+    const busEnds = await page.evaluate(() => {
+      const ramLeft = document.querySelector(".ram").offsetLeft;
+      return [...document.querySelectorAll("#drawing svg path")]
+        .filter((path) => path.getAttribute("stroke") === "#ff0000")
+        .map((path) => {
+          const coordinates = path.getAttribute("d").match(/-?\d+(?:\.\d+)?/g).map(Number);
+          return { endX: coordinates[coordinates.length - 2], ramLeft };
+        });
+    });
+    assert.equal(busEnds.length, 3);
+    assert.ok(busEnds.every(({ endX, ramLeft }) => endX <= ramLeft - 10));
 
     await page.locator("#compiler_source").fill("SET 15\nEND");
     await page.locator("#compiler_format").selectOption("hex");
@@ -97,8 +96,20 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(await page.locator("#reg_acc_val").innerText(), "00001111");
     assert.equal(await page.evaluate(() => window.cpu.state), 20);
 
+    await page.locator("#btn_examples").click();
+    assert.equal(await page.locator("#modal_examples").evaluate((modal) => modal.classList.contains("in")), true);
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("#modal_examples").evaluate((modal) => modal.classList.contains("in")), false);
+
+    await page.locator("#reg_acc_val").click();
+    assert.equal(await page.locator("#modal_change_value").evaluate((modal) => modal.classList.contains("in")), true);
+    await page.locator("#change_value_to").fill("00101010");
+    await page.locator("#btn_change_value_ok").click();
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "00101010");
+    assert.equal(await page.locator("#modal_change_value").evaluate((modal) => modal.classList.contains("in")), false);
+
     await page.locator("#btn_values_hex").click();
-    assert.equal(await page.locator("#reg_acc_val").innerText(), "0f");
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "2a");
     assert.equal(await page.locator("#ram_value_0").innerText(), "cf");
 
     await page.locator("#compiler_source").fill("UNKNOWN");
@@ -110,6 +121,7 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     await page.locator("#btn_compile").click();
     assert.equal(await page.locator("#compiler_output").inputValue(), "62 cf c7 00");
     assert.equal(await page.locator("#compiler_status").innerText(), "Compiled and loaded into RAM.");
+    assert.equal(requestedUrls.some((url) => /code\.jquery\.com|bootstrap\.min\.js/.test(url)), false);
     assert.deepEqual(pageErrors, []);
   } finally {
     await browser.close();
