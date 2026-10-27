@@ -63,6 +63,8 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     await page.goto(origin, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.cpu && document.querySelector("#ram_value_0"));
     assert.equal(await page.title(), "OCR A Level CPU simulator");
+    assert.equal(await page.locator("#btn_import_export").count(), 0);
+    assert.equal(await page.locator("#modal_export").count(), 0);
     assert.equal(await page.locator("#reg_acc_val").innerText(), "00000000");
     assert.equal(await page.locator(".decode_unit th").count(), 4);
     assert.equal(await page.locator(".decode_row_5 td").nth(3).innerText(), "LOAD");
@@ -129,6 +131,15 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
 
     assert.equal(await page.locator("#reg_acc_val").innerText(), "00001111");
     assert.equal(await page.evaluate(() => window.cpu.state), 20);
+
+    const ramBeforeCpuReset = await page.evaluate(() => [...window.cpu.ram]);
+    const ramDisplayBeforeCpuReset = await page.locator("#ram_value_0").innerText();
+    await page.locator("#btn_reset_cpu").click();
+    assert.deepEqual(await page.evaluate(() => [...window.cpu.ram]), ramBeforeCpuReset);
+    assert.equal(await page.locator("#ram_value_0").innerText(), ramDisplayBeforeCpuReset);
+    for (const register of ["acc", "pc", "mar", "mdr", "cir"]) {
+      assert.equal(await page.locator(`#reg_${register}_val`).innerText(), "00000000");
+    }
 
     await page.locator("#btn_examples").click();
     assert.equal(await page.locator("#modal_examples").evaluate((modal) => modal.classList.contains("in")), true);
