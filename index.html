@@ -63,33 +63,7 @@ Show values as:
 <button type="button" class="btn btn_values btn-secondary" id="btn_reset_cpu"><i class="fa fa-undo"></i> Reset CPU</button>
 </div>
 
-<div id="compiler">
-  <h3><i class="fa fa-code"></i> Compiler</h3>
-  <div class="form-group">
-    <label for="compiler_source">Program</label>
-    <textarea id="compiler_source" class="form-control" rows="6" placeholder="LOAD 15&#10;ADD 14&#10;STORE 13&#10;END"></textarea>
-  </div>
-  <div class="form-group">
-    <label for="compiler_format">Output format</label>
-    <select id="compiler_format" class="form-control">
-      <option value="binary" selected>Binary</option>
-      <option value="hex">Hexadecimal</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="compiler_output">Compiled program</label>
-    <textarea id="compiler_output" class="form-control" rows="6" readonly></textarea>
-  </div>
-  <div class="checkbox">
-    <label><input type="checkbox" id="compiler_load"> Load into RAM</label>
-  </div>
-  <div class="form-group">
-    <label for="compiler_address">Starting memory address</label>
-    <input type="number" id="compiler_address" class="form-control" min="0" max="15" value="0">
-  </div>
-  <button type="button" class="btn btn-secondary" id="btn_compile"><i class="fa fa-cogs"></i> Compile</button>
-  <span id="compiler_status" role="status" aria-live="polite"></span>
-</div>
+<button type="button" class="btn btn-secondary" id="btn_open_compiler"><i class="fa fa-code"></i> Compile</button>
 
 <button type="button" class="btn btn-secondary" id="btn_examples"><i class="fa fa-thumbs-up"></i> Examples</button>
 
@@ -121,6 +95,45 @@ Show values as:
 <div id="cpu" class="box">
 </div>
 
+
+<div id="modal_compiler" class="modal fade" role="dialog" aria-labelledby="modal_compiler_title" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-native-dismiss="modal" aria-label="Close">&times;</button>
+        <h4 class="modal-title" id="modal_compiler_title"><i class="fa fa-code"></i> Compile program</h4>
+      </div>
+      <div class="modal-body">
+        <div id="compiler">
+          <div class="form-group">
+            <label for="compiler_source">Program</label>
+            <textarea id="compiler_source" class="form-control" rows="6" placeholder="LOAD 15&#10;ADD 14&#10;STORE 13&#10;END"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="compiler_format">Output format</label>
+            <select id="compiler_format" class="form-control">
+              <option value="binary" selected>Binary</option>
+              <option value="hex">Hexadecimal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="compiler_output">Compiled program</label>
+            <textarea id="compiler_output" class="form-control" rows="6" readonly></textarea>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" id="compiler_load"> Load into RAM</label>
+          </div>
+          <div class="form-group">
+            <label for="compiler_address">Starting memory address</label>
+            <input type="number" id="compiler_address" class="form-control" min="0" max="15" value="0">
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn_compile"><i class="fa fa-cogs"></i> Compile</button>
+          <span id="compiler_status" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="modal_change_value" class="modal fade" role="dialog">
   <div class="modal-dialog">

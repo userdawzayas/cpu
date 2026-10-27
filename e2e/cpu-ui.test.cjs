@@ -80,6 +80,38 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(busEnds.length, 3);
     assert.ok(busEnds.every(({ endX, ramLeft }) => endX <= ramLeft - 10));
 
+    assert.equal(await page.locator("#modal_compiler").evaluate((modal) => modal.classList.contains("in")), false);
+    await page.locator("#btn_open_compiler").click();
+    assert.equal(await page.locator("#modal_compiler").evaluate((modal) => modal.classList.contains("in")), true);
+    assert.equal(await page.evaluate(() => document.activeElement.id), "compiler_source");
+    const compilerModalSize = await page.locator("#modal_compiler .modal-dialog").evaluate((dialog) => ({
+      width: dialog.getBoundingClientRect().width,
+      viewportWidth: window.innerWidth,
+      sourceFits: document.querySelector("#compiler_source").scrollWidth <= document.querySelector("#compiler_source").clientWidth,
+      outputFits: document.querySelector("#compiler_output").scrollWidth <= document.querySelector("#compiler_output").clientWidth
+    }));
+    assert.ok(compilerModalSize.width > 600);
+    assert.ok(compilerModalSize.width <= compilerModalSize.viewportWidth - 32);
+    assert.equal(compilerModalSize.sourceFits, true);
+    assert.equal(compilerModalSize.outputFits, true);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileCompilerWidth = await page.locator("#modal_compiler .modal-dialog").evaluate((dialog) => ({
+      width: dialog.getBoundingClientRect().width,
+      left: dialog.getBoundingClientRect().left,
+      right: dialog.getBoundingClientRect().right,
+      viewportWidth: window.innerWidth,
+      textareasFit: [...dialog.querySelectorAll("textarea")].every((textarea) => {
+        const bounds = textarea.getBoundingClientRect();
+        return bounds.left >= dialog.getBoundingClientRect().left &&
+          bounds.right <= dialog.getBoundingClientRect().right &&
+          textarea.scrollWidth <= textarea.clientWidth;
+      })
+    }));
+    assert.ok(mobileCompilerWidth.width <= mobileCompilerWidth.viewportWidth - 32);
+    assert.ok(mobileCompilerWidth.left >= 0);
+    assert.ok(mobileCompilerWidth.right <= mobileCompilerWidth.viewportWidth);
+    assert.equal(mobileCompilerWidth.textareasFit, true);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.locator("#compiler_source").fill("SET 15\nEND");
     await page.locator("#compiler_format").selectOption("hex");
     await page.locator("#compiler_load").check();
@@ -88,6 +120,8 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(await page.locator("#compiler_output").inputValue(), "cf 00");
     assert.equal(await page.locator("#compiler_status").innerText(), "Compiled and loaded into RAM.");
     assert.equal(await page.locator("#ram_value_0").innerText(), "11001111");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("#modal_compiler").evaluate((modal) => modal.classList.contains("in")), false);
 
     for (let step = 0; step < 8; step += 1) {
       await page.locator("#btn_step").click();
@@ -112,6 +146,7 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(await page.locator("#reg_acc_val").innerText(), "2a");
     assert.equal(await page.locator("#ram_value_0").innerText(), "cf");
 
+    await page.locator("#btn_open_compiler").click();
     await page.locator("#compiler_source").fill("UNKNOWN");
     await page.locator("#btn_compile").click();
     assert.equal(await page.locator("#compiler_status").innerText(), "Line 1: unknown instruction UNKNOWN.");
