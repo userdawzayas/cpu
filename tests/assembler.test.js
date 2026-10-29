@@ -32,6 +32,13 @@ describe("assembler", () => {
     ]);
   });
 
+  it("offsets label addresses by the starting memory address", () => {
+    const source = "BRANCH ;x\nEND\n;x OUTPUT";
+
+    expect(compileProgram(source, 0)).toEqual([0x62, 0x00, 0x92]);
+    expect(compileProgram(source, 1)).toEqual([0x63, 0x00, 0x92]);
+  });
+
   it("keeps semicolon comments and rejects missing or duplicate labels", () => {
     expect(compileProgram("; comment only\nSET 2 ; ordinary comment\nEND")).toEqual([
       0xc2, 0x00
