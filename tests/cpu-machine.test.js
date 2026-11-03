@@ -86,6 +86,18 @@ describe("instruction decoding and execution", () => {
     expect(executeDecodedInstruction(loadState).registers.acc).toBe(12);
   });
 
+  it("loads and stores through an address held in RAM", () => {
+    const ram = Array(256).fill(0);
+    ram[3] = 9;
+    ram[9] = 12;
+    const loadState = stateWithInstruction(13, 3, { ram });
+    const storeState = stateWithInstruction(14, 3, { ram, registers: { acc: 17 } });
+
+    expect(executeDecodedInstruction(loadState).registers.acc).toBe(12);
+    expect(executeDecodedInstruction(storeState).ram[9]).toBe(17);
+    expect(storeState.ram[9]).toBe(12);
+  });
+
   it("supports unconditional, zero, and non-negative branches", () => {
     const always = stateWithInstruction(6, 9);
     const zero = stateWithInstruction(7, 8, { registers: { acc: 0 } });
@@ -132,6 +144,6 @@ describe("instruction decoding and execution", () => {
   });
 
   it("rejects unsupported opcodes", () => {
-    expect(() => executeDecodedInstruction(stateWithInstruction(13))).toThrow("Unsupported opcode 13");
+    expect(() => executeDecodedInstruction(stateWithInstruction(15))).toThrow("Unsupported opcode 15");
   });
 });

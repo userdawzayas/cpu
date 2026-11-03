@@ -68,6 +68,10 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.equal(await page.locator("#reg_acc_val").innerText(), "00000000");
     assert.equal(await page.locator(".decode_unit th").count(), 4);
     assert.equal(await page.locator(".decode_row_5 td").nth(3).innerText(), "LOAD");
+    assert.equal(await page.locator(".decode_row_13 td").nth(1).innerText(), "[address]");
+    assert.equal(await page.locator(".decode_row_13 td").nth(3).innerText(), "LOAD");
+    assert.equal(await page.locator(".decode_row_14 td").nth(1).innerText(), "[address]");
+    assert.equal(await page.locator(".decode_row_14 td").nth(3).innerText(), "STORE");
     assert.equal(await page.locator(".decode_row_9").nth(0).locator("td").nth(3).innerText(), "INPUT");
     assert.equal(await page.locator(".decode_row_9").nth(1).locator("td").nth(3).innerText(), "OUTPUT");
     const busEnds = await page.evaluate(() => {
@@ -229,10 +233,7 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
       [0x901, 0x30f, 0x901, 0x10f, 0x902, 0]
     );
     await page.locator("#btn_open_compiler").click();
-    assert.equal(
-      await page.locator("#compiler_source").inputValue(),
-      "INPUT\nSTORE 15\nINPUT\nADD 15\nOUTPUT\nEND"
-    );
+    assert.match(await page.locator("#compiler_source").inputValue(), /INPUT # Pido el primer sumando[\s\S]*END # Termino el programa/);
     await page.keyboard.press("Escape");
 
     await page.locator("#btn_examples").click();
@@ -252,6 +253,61 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.match(await page.locator("#compiler_source").inputValue(), /STORE 11111111[\s\S]*BRANCHZERO ;mostrar_resultado/);
     await page.locator("#btn_compile").click();
     assert.equal(await page.locator("#compiler_status").innerText(), "Compilation complete.");
+
+    await page.locator("#compiler_source").fill(
+      "SET 42\nSTORE 22\nSET 22\nSTORE 20\nLOAD [20]\nSET 73\nSTORE [20]\nEND"
+    );
+    await page.locator("#compiler_format").selectOption("hex");
+    await page.locator("#compiler_load").check();
+    await page.locator("#btn_compile").click();
+    assert.equal(await page.locator("#compiler_output").inputValue(), "c2a 316 c16 314 d14 c49 e14 000");
+    await page.keyboard.press("Escape");
+    for (let instruction = 0; instruction < 4; instruction += 1) {
+      await page.locator("#btn_step_instruction").click();
+    }
+    for (let step = 0; step < 7; step += 1) {
+      await page.locator("#btn_step").click();
+    }
+    assert.equal(await page.evaluate(() => window.cpu.state), 131);
+    await page.locator("#btn_step").click();
+    assert.deepEqual(await page.evaluate(() => ({ state: window.cpu.state, mar: window.cpu.registers.mar })), { state: 132, mar: 20 });
+    await page.locator("#btn_step").click();
+    assert.deepEqual(await page.evaluate(() => ({ state: window.cpu.state, mar: window.cpu.registers.mar, mdr: window.cpu.registers.mdr })), { state: 133, mar: 20, mdr: 22 });
+    await page.locator("#btn_step").click();
+    assert.deepEqual(await page.evaluate(() => ({ state: window.cpu.state, mar: window.cpu.registers.mar })), { state: 134, mar: 22 });
+    await page.locator("#btn_step").click();
+    assert.deepEqual(await page.evaluate(() => ({ state: window.cpu.state, mdr: window.cpu.registers.mdr })), { state: 135, mdr: 42 });
+    await page.locator("#btn_step").click();
+    assert.equal(await page.evaluate(() => window.cpu.registers.acc), 42);
+    await page.locator("#btn_step_instruction").click();
+    await page.locator("#btn_step_instruction").click();
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.evaluate(() => window.cpu.ram[22]), 73);
+    await page.locator("#btn_values_binary").click();
+    await page.locator("#btn_reset_ram").click();
+    assert.equal(await page.evaluate(() => window.cpu.ram.every((value) => value === 0)), true);
+    assert.equal(await page.locator("#ram_value_0").innerText(), "000000000000");
+
+    await page.locator("#btn_examples").click();
+    await page.locator("#modal_examples a").nth(4).click();
+    await page.waitForFunction(() => window.cpu?.ram?.[0] === 0x901);
+    assert.equal(new URL(page.url()).searchParams.get("program"), "multiplyTable");
+    assert.match(await page.locator("#compiler_source").inputValue(), /STORE \[11110010\]/);
+    const tableExecution = await page.evaluate(() => {
+      window.prompt = () => "7";
+      let instructions = 0;
+      while (window.cpu.state !== 7 && instructions < 300) {
+        window.cpu.stepInstruction();
+        instructions += 1;
+      }
+      return {
+        halted: window.cpu.state === 7,
+        products: window.cpu.ram.slice(246, 256)
+      };
+    });
+    assert.equal(tableExecution.halted, true);
+    assert.deepEqual(tableExecution.products, [7, 14, 21, 28, 35, 42, 49, 56, 63, 70]);
+    assert.deepEqual(pageErrors, []);
   } finally {
     await browser.close();
     await new Promise((resolveClose, rejectClose) => {

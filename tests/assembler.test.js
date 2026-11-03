@@ -8,6 +8,12 @@ describe("assembler", () => {
     ]);
   });
 
+  it("assembles bracketed LOAD and STORE operands as indirect instructions", () => {
+    expect(compileProgram("LOAD [15]\nSTORE [0b0010]\nLOAD 15\nSTORE 2")).toEqual([
+      0xd0f, 0xe02, 0x50f, 0x302
+    ]);
+  });
+
   it("accepts decimal, binary, and hexadecimal operands and comments", () => {
     expect(compileProgram("set 15 ; max\nINC 0b0010\nDEC 0011\nBRANCH 0x4 // loop")).toEqual([
       0xc0f, 0xa02, 0xb03, 0x604
