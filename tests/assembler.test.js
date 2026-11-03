@@ -15,8 +15,8 @@ describe("assembler", () => {
   });
 
   it("accepts decimal, binary, and hexadecimal operands and comments", () => {
-    expect(compileProgram("set 15 ; max\nINC 0b0010\nDEC 0011\nBRANCH 0x4 // loop")).toEqual([
-      0xc0f, 0xa02, 0xb03, 0x604
+    expect(compileProgram("set 15 ; max\nINC 0b0010\nDEC 0011\nSET 0d10\nBRANCH 0x4 // loop")).toEqual([
+      0xc0f, 0xa02, 0xb03, 0xc0a, 0x604
     ]);
   });
 

@@ -232,6 +232,20 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
       await page.evaluate(() => window.cpu.ram.slice(0, 6)),
       [0x901, 0x30f, 0x901, 0x10f, 0x902, 0]
     );
+    await page.locator("#btn_values_denary").click();
+    assert.match(await page.locator("#compiler_source").inputValue(), /STORE 0d15 # Guardo el primer sumando/);
+    assert.deepEqual(
+      await page.evaluate(() => window.cpu.compileProgram(document.querySelector("#compiler_source").value)),
+      [0x901, 0x30f, 0x901, 0x10f, 0x902, 0]
+    );
+    await page.locator("#btn_values_hex").click();
+    assert.match(await page.locator("#compiler_source").inputValue(), /ADD 0xF # Sumo el valor guardado/);
+    assert.deepEqual(
+      await page.evaluate(() => window.cpu.compileProgram(document.querySelector("#compiler_source").value)),
+      [0x901, 0x30f, 0x901, 0x10f, 0x902, 0]
+    );
+    await page.locator("#btn_values_binary").click();
+    assert.match(await page.locator("#compiler_source").inputValue(), /STORE 1111 # Guardo el primer sumando/);
     await page.locator("#btn_open_compiler").click();
     assert.match(await page.locator("#compiler_source").inputValue(), /INPUT # Pido el primer sumando[\s\S]*END # Termino el programa/);
     await page.keyboard.press("Escape");
