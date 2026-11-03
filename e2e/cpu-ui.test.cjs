@@ -90,6 +90,10 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     await page.locator("#btn_open_compiler").click();
     assert.equal(await page.locator("#modal_compiler").evaluate((modal) => modal.classList.contains("in")), true);
     assert.equal(await page.evaluate(() => document.activeElement.id), "compiler_source");
+    await page.keyboard.press("Escape");
+    await page.locator("#compiler_source").evaluate((textarea) => { textarea.scrollTop = textarea.scrollHeight; });
+    await page.locator("#btn_open_compiler").click();
+    assert.equal(await page.locator("#compiler_source").evaluate((textarea) => textarea.scrollTop), 0);
     const compilerModalSize = await page.locator("#modal_compiler .modal-dialog").evaluate((dialog) => ({
       width: dialog.getBoundingClientRect().width,
       viewportWidth: window.innerWidth,
@@ -321,6 +325,19 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     });
     assert.equal(tableExecution.halted, true);
     assert.deepEqual(tableExecution.products, [7, 14, 21, 28, 35, 42, 49, 56, 63, 70]);
+
+    await page.locator("#btn_examples").click();
+    await page.locator("#modal_examples a").nth(5).click();
+    await page.waitForFunction(() => window.cpu?.ram?.[0] === 0xc05);
+    assert.equal(new URL(page.url()).searchParams.get("program"), "reverseNumbers");
+    const reverseSource = await page.locator("#compiler_source").inputValue();
+    assert.match(reverseSource, /^# Pide 5 números y los muestra en orden inverso\.\n\n# Algoritmo:[\s\S]*\n\n# Implementación\n/);
+    assert.match(reverseSource, /SET 101 # Pongo cinco en el acumulador como total de números[\s\S]*STORE 11111111 # Guardo el total de números[\s\S]*STORE 11111110 # Inicializo cuántos números faltan por pedir/);
+    assert.match(reverseSource, /STORE \[11111101\] # Guardo el número en la dirección apuntada/);
+    assert.match(reverseSource, /LOAD \[11111101\] # Cargo el número apuntado/);
+    await page.locator("#btn_open_compiler").click();
+    assert.equal(await page.locator("#compiler_source").evaluate((textarea) => textarea.scrollTop), 0);
+    assert.equal(await page.locator("#compiler_source").evaluate((textarea) => textarea.selectionStart), 0);
     assert.deepEqual(pageErrors, []);
   } finally {
     await browser.close();

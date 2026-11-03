@@ -60,6 +60,39 @@ BRANCHZERO ;done
 BRANCH ;next
 ;done END`;
 
+const reverseNumbersProgram = `
+# Pide 5 números y muéstralos en orden inverso a como se han introducido.
+SET 101
+STORE 11111111
+STORE 11111110
+SET 1100100
+STORE 11111101
+;read_loop LOAD 11111110
+BRANCHZERO ;reverse_setup
+INPUT
+STORE [11111101]
+LOAD 11111101
+INC 1
+STORE 11111101
+LOAD 11111110
+DEC 1
+STORE 11111110
+BRANCH ;read_loop
+;reverse_setup LOAD 11111101
+DEC 1
+STORE 11111101
+;reverse_loop LOAD [11111101]
+OUTPUT
+LOAD 11111101
+DEC 1
+STORE 11111101
+LOAD 11111111
+DEC 1
+STORE 11111111
+BRANCHZERO ;done
+BRANCH ;reverse_loop
+;done END`;
+
 function runProgram(source, inputValues, maxCycles = 100) {
   const program = compileProgram(source);
   const ram = Array(RAM_SIZE).fill(0);
@@ -126,5 +159,16 @@ describe("multiplication-table example program", () => {
 
     expect(program).toContain(0xef2);
     expect(ram.slice(246, 256)).toEqual([7, 14, 21, 28, 35, 42, 49, 56, 63, 70]);
+  });
+});
+
+describe("reverse-five-numbers example program", () => {
+  it("outputs the five inputs in reverse order using indirect addressing", () => {
+    const { outputs, program } = runProgram(reverseNumbersProgram, [8, 3, 7, 2, 9], 200);
+
+    expect(program).toContain(0x3ff);
+    expect(program).toContain(0xefd);
+    expect(program).toContain(0xdfd);
+    expect(outputs).toEqual([9, 2, 7, 3, 8]);
   });
 });
