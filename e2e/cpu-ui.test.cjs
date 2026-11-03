@@ -218,6 +218,40 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     }
     assert.deepEqual(outputs, ["5"]);
     assert.equal(await page.evaluate(() => window.cpu.state), 7);
+
+    await page.locator("#btn_examples").click();
+    await page.locator("#modal_examples a").nth(1).click();
+    await page.waitForFunction(() => window.cpu?.ram?.[0] === 0x901);
+    assert.equal(new URL(page.url()).pathname, "/");
+    assert.equal(new URL(page.url()).searchParams.get("program"), "add");
+    assert.deepEqual(
+      await page.evaluate(() => window.cpu.ram.slice(0, 6)),
+      [0x901, 0x30f, 0x901, 0x10f, 0x902, 0]
+    );
+    await page.locator("#btn_open_compiler").click();
+    assert.equal(
+      await page.locator("#compiler_source").inputValue(),
+      "INPUT\nSTORE 15\nINPUT\nADD 15\nOUTPUT\nEND"
+    );
+    await page.keyboard.press("Escape");
+
+    await page.locator("#btn_examples").click();
+    await page.locator("#modal_examples a").nth(2).click();
+    await page.waitForFunction(() => window.cpu?.ram?.[0] === 0x901);
+    assert.equal(new URL(page.url()).searchParams.get("program"), "largest");
+    assert.deepEqual(
+      await page.evaluate(() => window.cpu.ram.slice(0, 12)),
+      [0x901, 0x30f, 0x901, 0x30e, 0x20f, 0x809, 0x50f, 0x902, 0, 0x50e, 0x902, 0]
+    );
+
+    await page.locator("#btn_examples").click();
+    await page.locator("#modal_examples a").nth(3).click();
+    await page.waitForFunction(() => window.cpu?.ram?.[0] === 0x901);
+    assert.equal(new URL(page.url()).searchParams.get("program"), "multiply");
+    await page.locator("#btn_open_compiler").click();
+    assert.match(await page.locator("#compiler_source").inputValue(), /STORE 11111111[\s\S]*BRANCHZERO ;mostrar_resultado/);
+    await page.locator("#btn_compile").click();
+    assert.equal(await page.locator("#compiler_status").innerText(), "Compilation complete.");
   } finally {
     await browser.close();
     await new Promise((resolveClose, rejectClose) => {

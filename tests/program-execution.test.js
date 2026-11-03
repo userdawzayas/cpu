@@ -17,6 +17,26 @@ LOAD 1110
 OUTPUT
 END`;
 
+const multiplicationProgram = `
+INPUT
+STORE 11111111
+INPUT
+STORE 11111110
+SET 0
+STORE 11111101
+;inicio_bucle LOAD 11111110
+BRANCHZERO ;mostrar_resultado
+DEC 1
+STORE 11111110
+LOAD 11111111
+ADD 11111101
+STORE 11111101
+BRANCH ;inicio_bucle
+;mostrar_resultado
+LOAD 11111101
+OUTPUT
+END`;
+
 function runProgram(source, inputValues) {
   const program = compileProgram(source);
   const ram = Array(RAM_SIZE).fill(0);
@@ -61,6 +81,18 @@ describe("largest-of-two example program", () => {
     const { outputs, program } = runProgram(largestOfTwoProgram, inputs);
 
     expect(program[5]).toBe(0x809);
+    expect(outputs).toEqual([expected]);
+  });
+});
+
+describe("multiplication example program", () => {
+  it.each([
+    { inputs: [3, 5], expected: 15 },
+    { inputs: [5, 3], expected: 15 },
+    { inputs: [0, 5], expected: 0 }
+  ])("outputs $expected for inputs $inputs", ({ inputs, expected }) => {
+    const { outputs } = runProgram(multiplicationProgram, inputs);
+
     expect(outputs).toEqual([expected]);
   });
 });
