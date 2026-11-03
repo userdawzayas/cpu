@@ -37,7 +37,30 @@ LOAD 11111101
 OUTPUT
 END`;
 
-function runProgram(source, inputValues) {
+const multiplicationTableProgram = `
+INPUT
+STORE 11110000
+SET 1010
+STORE 11110001
+SET 0
+STORE 11110011
+SET 11110110
+STORE 11110010
+;next LOAD 11110011
+ADD 11110000
+STORE 11110011
+STORE [11110010]
+LOAD 11110010
+INC 1
+STORE 11110010
+LOAD 11110001
+DEC 1
+STORE 11110001
+BRANCHZERO ;done
+BRANCH ;next
+;done END`;
+
+function runProgram(source, inputValues, maxCycles = 100) {
   const program = compileProgram(source);
   const ram = Array(RAM_SIZE).fill(0);
   program.forEach((instruction, address) => {
@@ -49,7 +72,7 @@ function runProgram(source, inputValues) {
   const outputs = [];
   let cycles = 0;
 
-  while (!state.halted && cycles < 100) {
+  while (!state.halted && cycles < maxCycles) {
     const programCounter = state.registers.pc;
     state = {
       ...state,
@@ -69,8 +92,8 @@ function runProgram(source, inputValues) {
   }
 
   expect(state.halted).toBe(true);
-  expect(cycles).toBeLessThan(100);
-  return { outputs, program };
+  expect(cycles).toBeLessThan(maxCycles);
+  return { outputs, program, ram: state.ram };
 }
 
 describe("largest-of-two example program", () => {
@@ -94,5 +117,14 @@ describe("multiplication example program", () => {
     const { outputs } = runProgram(multiplicationProgram, inputs);
 
     expect(outputs).toEqual([expected]);
+  });
+});
+
+describe("multiplication-table example program", () => {
+  it("stores the first ten multiples in the last ten RAM cells", () => {
+    const { program, ram } = runProgram(multiplicationTableProgram, [7], 300);
+
+    expect(program).toContain(0xef2);
+    expect(ram.slice(246, 256)).toEqual([7, 14, 21, 28, 35, 42, 49, 56, 63, 70]);
   });
 });
