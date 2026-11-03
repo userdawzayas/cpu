@@ -114,32 +114,45 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     assert.ok(mobileCompilerWidth.right <= mobileCompilerWidth.viewportWidth);
     assert.equal(mobileCompilerWidth.textareasFit, true);
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.locator("#compiler_source").fill("SET 15\nEND");
+    await page.locator("#compiler_source").fill("SET 15\nINC 1\nEND");
     await page.locator("#compiler_format").selectOption("hex");
     await page.locator("#compiler_load").check();
     await page.locator("#btn_compile").click();
 
-    assert.equal(await page.locator("#compiler_output").inputValue(), "cf 00");
+    assert.equal(await page.locator("#compiler_output").inputValue(), "c0f a01 000");
     assert.equal(await page.locator("#compiler_status").innerText(), "Compiled and loaded into RAM.");
-    assert.equal(await page.locator("#ram_value_0").innerText(), "11001111");
+    assert.equal(await page.locator("#ram_value_0").innerText(), "110000001111");
     await page.keyboard.press("Escape");
     assert.equal(await page.locator("#modal_compiler").evaluate((modal) => modal.classList.contains("in")), false);
 
-    for (let step = 0; step < 8; step += 1) {
-      await page.locator("#btn_step").click();
-    }
+    await page.locator("#btn_step_instruction").click();
 
     assert.equal(await page.locator("#reg_acc_val").innerText(), "00001111");
-    assert.equal(await page.evaluate(() => window.cpu.state), 20);
+    assert.equal(await page.evaluate(() => window.cpu.state), 0);
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "00010000");
+    assert.equal(await page.evaluate(() => window.cpu.state), 0);
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.evaluate(() => window.cpu.state), 7);
 
     const ramBeforeCpuReset = await page.evaluate(() => [...window.cpu.ram]);
     const ramDisplayBeforeCpuReset = await page.locator("#ram_value_0").innerText();
     await page.locator("#btn_reset_cpu").click();
     assert.deepEqual(await page.evaluate(() => [...window.cpu.ram]), ramBeforeCpuReset);
     assert.equal(await page.locator("#ram_value_0").innerText(), ramDisplayBeforeCpuReset);
-    for (const register of ["acc", "pc", "mar", "mdr", "cir"]) {
+    for (const register of ["acc", "pc", "mar"]) {
       assert.equal(await page.locator(`#reg_${register}_val`).innerText(), "00000000");
     }
+    for (const register of ["mdr", "cir"]) {
+      assert.equal(await page.locator(`#reg_${register}_val`).innerText(), "000000000000");
+    }
+    for (let step = 0; step < 8; step += 1) {
+      await page.locator("#btn_step").click();
+    }
+    assert.equal(await page.evaluate(() => window.cpu.state), 20);
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "00010000");
+    assert.equal(await page.evaluate(() => window.cpu.state), 0);
 
     await page.locator("#btn_examples").click();
     assert.equal(await page.locator("#modal_examples").evaluate((modal) => modal.classList.contains("in")), true);
@@ -155,7 +168,7 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
 
     await page.locator("#btn_values_hex").click();
     assert.equal(await page.locator("#reg_acc_val").innerText(), "2a");
-    assert.equal(await page.locator("#ram_value_0").innerText(), "cf");
+    assert.equal(await page.locator("#ram_value_0").innerText(), "c0f");
 
     await page.locator("#btn_open_compiler").click();
     await page.locator("#compiler_source").fill("UNKNOWN");
@@ -165,10 +178,46 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
 
     await page.locator("#compiler_source").fill("BRANCH ;finish\nSET 15\n;finish SET 7\nEND");
     await page.locator("#btn_compile").click();
-    assert.equal(await page.locator("#compiler_output").inputValue(), "62 cf c7 00");
+    assert.equal(await page.locator("#compiler_output").inputValue(), "602 c0f c07 000");
     assert.equal(await page.locator("#compiler_status").innerText(), "Compiled and loaded into RAM.");
     assert.equal(requestedUrls.some((url) => /code\.jquery\.com|bootstrap\.min\.js/.test(url)), false);
     assert.deepEqual(pageErrors, []);
+
+    const inputs = ["3", "5"];
+    const outputs = [];
+    page.on("dialog", async (dialog) => {
+      if (dialog.type() === "prompt") {
+        await dialog.accept(inputs.shift());
+      } else {
+        outputs.push(dialog.message().replace("Output: ", ""));
+        await dialog.dismiss();
+      }
+    });
+    await page.locator("#compiler_source").fill(
+      "INPUT\nSTORE 1111\nINPUT\nSTORE 1110\nSUB 1111\n" +
+      "BRANCHPOS ;mostrar_segundo\nLOAD 1111\nOUTPUT\nEND\n" +
+      ";mostrar_segundo LOAD 1110\nOUTPUT\nEND"
+    );
+    await page.locator("#btn_compile").click();
+    await page.keyboard.press("Escape");
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.evaluate(() => window.cpu.state), 0);
+    assert.equal(await page.locator("#reg_pc_val").innerText(), "01");
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "03");
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.locator("#ram_value_15").innerText(), "003");
+    await page.locator("#btn_step_instruction").click();
+    assert.equal(await page.evaluate(() => window.cpu.state), 0);
+    assert.equal(await page.locator("#reg_pc_val").innerText(), "03");
+    assert.equal(await page.locator("#reg_acc_val").innerText(), "05");
+    for (let instruction = 3; instruction < 6; instruction += 1) {
+      await page.locator("#btn_step_instruction").click();
+    }
+    for (let instruction = 6; instruction < 9; instruction += 1) {
+      await page.locator("#btn_step_instruction").click();
+    }
+    assert.deepEqual(outputs, ["5"]);
+    assert.equal(await page.evaluate(() => window.cpu.state), 7);
   } finally {
     await browser.close();
     await new Promise((resolveClose, rejectClose) => {

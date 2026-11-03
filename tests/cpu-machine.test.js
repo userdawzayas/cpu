@@ -9,51 +9,51 @@ import {
 
 function stateWithInstruction(opcode, operand = 0, overrides = {}) {
   const state = createCpuState({ ram: overrides.ram ?? Array(RAM_SIZE).fill(0) });
-  state.registers.cir = (opcode << 4) | operand;
+  state.registers.cir = (opcode << 8) | operand;
   Object.assign(state.registers, overrides.registers);
   return state;
 }
 
 describe("CPU state", () => {
-  it("creates five zeroed registers and 16 RAM cells", () => {
+  it("creates five zeroed registers and 256 RAM cells", () => {
     const state = createCpuState();
 
     expect(state.registers).toEqual({ acc: 0, pc: 0, mar: 0, mdr: 0, cir: 0 });
-    expect(state.ram).toEqual(Array(16).fill(0));
+    expect(state.ram).toEqual(Array(256).fill(0));
     expect(state.halted).toBe(false);
   });
 
   it("copies supplied RAM and rejects invalid memory shapes or values", () => {
-    const ram = Array(16).fill(0);
+    const ram = Array(256).fill(0);
     const state = createCpuState({ ram });
     ram[0] = 9;
 
     expect(state.ram[0]).toBe(0);
-    expect(() => createCpuState({ ram: [0] })).toThrow("exactly 16 values");
-    expect(() => createCpuState({ ram: [NaN, ...Array(15).fill(0)] })).toThrow(
+    expect(() => createCpuState({ ram: [0] })).toThrow("exactly 256 values");
+    expect(() => createCpuState({ ram: [NaN, ...Array(255).fill(0)] })).toThrow(
       "finite numbers"
     );
   });
 
   it("resets registers and halt state without clearing RAM", () => {
     const state = stateWithInstruction(0, 0, {
-      ram: [7, ...Array(15).fill(0)],
+      ram: [7, ...Array(255).fill(0)],
       registers: { acc: 9, pc: 4, mar: 2, mdr: 8, cir: 0 }
     });
     state.halted = true;
 
     expect(resetCpuState(state)).toEqual({
       registers: { acc: 0, pc: 0, mar: 0, mdr: 0, cir: 0 },
-      ram: [7, ...Array(15).fill(0)],
+      ram: [7, ...Array(255).fill(0)],
       halted: false
     });
   });
 });
 
 describe("instruction decoding and execution", () => {
-  it("splits an instruction byte into a four-bit opcode and operand", () => {
-    expect(decodeInstruction(0xaf)).toEqual({ opcode: 10, operand: 15 });
-    expect(decodeInstruction(-1)).toEqual({ opcode: 15, operand: 15 });
+  it("splits a 12-bit instruction into opcode and operand", () => {
+    expect(decodeInstruction(0xa0f)).toEqual({ opcode: 10, operand: 15 });
+    expect(decodeInstruction(-1)).toEqual({ opcode: 15, operand: 255 });
   });
 
   it("halts on END", () => {
@@ -64,7 +64,7 @@ describe("instruction decoding and execution", () => {
   });
 
   it("adds and subtracts the addressed RAM value", () => {
-    const ram = Array(16).fill(0);
+    const ram = Array(256).fill(0);
     ram[3] = 4;
     const addState = stateWithInstruction(1, 3, { ram, registers: { acc: 10 } });
     const subtractState = stateWithInstruction(2, 3, { ram, registers: { acc: 10 } });
@@ -74,7 +74,7 @@ describe("instruction decoding and execution", () => {
   });
 
   it("stores, resets, and loads addressed memory", () => {
-    const ram = Array(16).fill(0);
+    const ram = Array(256).fill(0);
     ram[3] = 12;
     const storeState = stateWithInstruction(3, 5, { registers: { acc: 17 } });
     const resetState = stateWithInstruction(4, 3, { ram });
@@ -124,7 +124,7 @@ describe("instruction decoding and execution", () => {
   });
 
   it("preserves current unbounded arithmetic until overflow semantics are decided", () => {
-    const ram = Array(16).fill(0);
+    const ram = Array(256).fill(0);
     ram[0] = 1;
     const state = stateWithInstruction(1, 0, { ram, registers: { acc: 127 } });
 

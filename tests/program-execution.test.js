@@ -60,7 +60,7 @@ describe("largest-of-two example program", () => {
   ])("outputs $expected for inputs $inputs", ({ inputs, expected }) => {
     const { outputs, program } = runProgram(largestOfTwoProgram, inputs);
 
-    expect(program[5]).toBe(0x89);
+    expect(program[5]).toBe(0x809);
     expect(outputs).toEqual([expected]);
   });
 });
