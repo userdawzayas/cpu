@@ -162,6 +162,24 @@ describe("multiplication-table example program", () => {
   });
 });
 
+describe("symbolic variables", () => {
+  it("uses a variable as an indirect pointer", () => {
+    const { outputs, program, ram } = runProgram(`
+SET 20
+STORE pointer
+SET 42
+STORE [pointer]
+LOAD [pointer]
+OUTPUT
+END`);
+
+    expect(program[1]).toBe(0x3ff);
+    expect(ram[255]).toBe(20);
+    expect(ram[20]).toBe(42);
+    expect(outputs).toEqual([42]);
+  });
+});
+
 describe("reverse-five-numbers example program", () => {
   it("outputs the five inputs in reverse order using indirect addressing", () => {
     const { outputs, program } = runProgram(reverseNumbersProgram, [8, 3, 7, 2, 9], 200);

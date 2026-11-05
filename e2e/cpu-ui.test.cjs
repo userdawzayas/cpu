@@ -268,7 +268,7 @@ test("the UI compiles a program, loads RAM, and steps SET into the accumulator",
     await page.waitForFunction(() => window.cpu?.ram?.[0] === 0x901);
     assert.equal(new URL(page.url()).searchParams.get("program"), "multiply");
     await page.locator("#btn_open_compiler").click();
-    assert.match(await page.locator("#compiler_source").inputValue(), /STORE 11111111[\s\S]*BRANCHZERO ;mostrar_resultado/);
+    assert.match(await page.locator("#compiler_source").inputValue(), /STORE multiplicando[\s\S]*STORE multiplicador[\s\S]*STORE resultado[\s\S]*BRANCHZERO ;mostrar_resultado/);
     await page.locator("#btn_compile").click();
     assert.equal(await page.locator("#compiler_status").innerText(), "Compilation complete.");
 

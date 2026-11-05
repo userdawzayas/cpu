@@ -14,6 +14,31 @@ describe("assembler", () => {
     ]);
   });
 
+  it("allocates variables from the end of RAM in declaration order", () => {
+    expect(compileProgram("STORE a\nSTORE b\nLOAD a\nSTORE [b]\nLOAD [b]\nEND")).toEqual([
+      0x3ff, 0x3fe, 0x5ff, 0xefe, 0xdfe, 0x000
+    ]);
+  });
+
+  it("accepts a symbolic variable as the RESET address", () => {
+    expect(compileProgram("STORE a\nRESET a")).toEqual([0x3ff, 0x4ff]);
+  });
+
+  it("requires variables to be declared with a direct STORE before use", () => {
+    expect(() => compileProgram("LOAD a\nSTORE a")).toThrow(
+      "Line 1: variable a is not defined. Define it with STORE first."
+    );
+    expect(() => compileProgram("STORE [a]\nSTORE a")).toThrow(
+      "Line 1: variable a is not defined. Define it with STORE first."
+    );
+  });
+
+  it("rejects programs that overlap their allocated variables", () => {
+    expect(() => compileProgram("STORE a\nEND", 254)).toThrow(
+      "The program and variables do not fit in RAM."
+    );
+  });
+
   it("accepts decimal, binary, and hexadecimal operands and comments", () => {
     expect(compileProgram("set 15 ; max\nINC 0b0010\nDEC 0011\nSET 0d10\nBRANCH 0x4 // loop")).toEqual([
       0xc0f, 0xa02, 0xb03, 0xc0a, 0x604
